@@ -13,6 +13,7 @@ interface StoreSettings {
   observation: string;
   whatsapp_number: string;
   is_open_manually: boolean;
+  store_address?: string;
 }
 
 export function AdminSettings() {
@@ -42,7 +43,8 @@ export function AdminSettings() {
         id: '',
         observation: '',
         whatsapp_number: '5535991154125',
-        is_open_manually: true
+        is_open_manually: true,
+        store_address: ''
       });
     }
     setLoading(false);
@@ -59,6 +61,7 @@ export function AdminSettings() {
         observation: settings.observation,
         whatsapp_number: settings.whatsapp_number,
         is_open_manually: settings.is_open_manually,
+        store_address: settings.store_address,
         updated_at: new Date().toISOString(),
         store: 'docimdagringa'
       });
@@ -113,6 +116,19 @@ export function AdminSettings() {
             />
             <p className="text-xs text-muted-foreground">
               Este é o número para onde os pedidos serão enviados. Digite apenas números (código do país + DDD + número).
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="store_address">Endereço da Loja (Para Retirada)</Label>
+            <Input
+              id="store_address"
+              placeholder="Ex: Rua Benedito Antônio de Oliveira, 93A. Bairro Ponte Nova. Portão Branco."
+              value={settings?.store_address || ''}
+              onChange={(e) => setSettings(prev => prev ? ({ ...prev, store_address: e.target.value }) : null)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Este é o endereço que será exibido no checkout quando o cliente selecionar "Buscar na loja".
             </p>
           </div>
 

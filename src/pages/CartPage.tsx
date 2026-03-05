@@ -80,7 +80,7 @@ const CartPage = () => {
       return;
     }
 
-    navigate('/checkout');
+    navigate('/checkout', { state: { deliveryMethod } });
   };
 
   return (
@@ -139,12 +139,12 @@ const CartPage = () => {
                     <Button
                       variant="outline"
                       className={`flex-1 h-auto py-2 px-3 rounded-full text-xs border transition-all shadow-sm flex flex-row items-center justify-center gap-2 ${deliveryMethod === 'delivery'
-                          ? shippingRate
-                            ? 'bg-primary/10 border-primary text-primary font-medium italic'
-                            : 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600 animate-pulse font-medium italic'
-                          : !deliveryMethod
-                            ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600 animate-pulse font-medium italic'
-                            : 'border-muted-foreground/30 text-muted-foreground hover:border-primary/50 italic'
+                        ? shippingRate
+                          ? 'bg-primary/10 border-primary text-primary font-medium italic'
+                          : 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600 animate-pulse font-medium italic'
+                        : !deliveryMethod
+                          ? 'bg-blue-500 text-white border-blue-500 hover:bg-blue-600 animate-pulse font-medium italic'
+                          : 'border-muted-foreground/30 text-muted-foreground hover:border-primary/50 italic'
                         }`}
                       onClick={() => setIsShippingModalOpen(true)}
                     >
@@ -159,10 +159,10 @@ const CartPage = () => {
                     <Button
                       variant="outline"
                       className={`flex-1 h-auto py-2 px-3 rounded-full text-xs border transition-all shadow-sm flex flex-row items-center justify-center gap-2 ${deliveryMethod === 'pickup'
-                          ? 'bg-orange-500 text-white border-orange-500 font-medium italic'
-                          : !deliveryMethod
-                            ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-600 animate-pulse font-medium italic'
-                            : 'border-muted-foreground/30 text-muted-foreground hover:border-orange-500/50 italic'
+                        ? 'bg-orange-500 text-white border-orange-500 font-medium italic'
+                        : !deliveryMethod
+                          ? 'bg-orange-500 text-white border-orange-500 hover:bg-orange-600 animate-pulse font-medium italic'
+                          : 'border-muted-foreground/30 text-muted-foreground hover:border-orange-500/50 italic'
                         }`}
                       onClick={handlePickupSelection}
                     >
@@ -207,7 +207,7 @@ const CartPage = () => {
               className="w-full h-14 gradient-gold text-primary-foreground shadow-gold text-lg font-semibold mt-6"
               onClick={handleCheckout}
             >
-              Finalizar Pedido
+              Continuar
               <ArrowRight className="h-5 w-5 ml-2" />
             </Button>
           </>
