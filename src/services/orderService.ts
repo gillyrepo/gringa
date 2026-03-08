@@ -1,6 +1,6 @@
 
 import { supabase } from '@/lib/supabase';
-import { CartItem, CustomerInfo, Order, Product, ShippingRate } from '@/types/product';
+import { CartItem, CustomerInfo, DeliveryMethod, Order, PaymentMethodCode, Product, ShippingRate } from '@/types/product';
 
 export interface CreateOrderParams {
   items: CartItem[];
@@ -8,9 +8,23 @@ export interface CreateOrderParams {
   customerInfo: CustomerInfo;
   whatsappMessage?: string;
   shippingRate?: ShippingRate;
+  deliveryMethod?: DeliveryMethod;
+  paymentMethod?: PaymentMethodCode;
+  paymentLabel?: string;
+  changeAmount?: number | null;
 }
 
-export const createOrder = async ({ items, total, customerInfo, whatsappMessage, shippingRate }: CreateOrderParams) => {
+export const createOrder = async ({
+  items,
+  total,
+  customerInfo,
+  whatsappMessage,
+  shippingRate,
+  deliveryMethod,
+  paymentMethod,
+  paymentLabel,
+  changeAmount,
+}: CreateOrderParams) => {
   try {
     // 1. Insert Order Header
     const { data: orderData, error: orderError } = await supabase
@@ -35,6 +49,10 @@ export const createOrder = async ({ items, total, customerInfo, whatsappMessage,
         shipping_city: shippingRate?.city || null,
         shipping_neighborhood: shippingRate?.neighborhood || null,
         shipping_cost: shippingRate?.price || 0,
+        delivery_method: deliveryMethod || null,
+        payment_method: paymentMethod || null,
+        payment_label: paymentLabel || null,
+        change_amount: typeof changeAmount === 'number' ? changeAmount : null,
       })
       .select()
       .single();
@@ -132,6 +150,10 @@ export const getOrders = async () => {
       neighborhood: order.shipping_neighborhood || '',
       price: Number(order.shipping_cost || 0),
     } : undefined,
+    delivery_method: order.delivery_method || undefined,
+    payment_method: order.payment_method || undefined,
+    payment_label: order.payment_label || undefined,
+    change_amount: order.change_amount !== null && order.change_amount !== undefined ? Number(order.change_amount) : null,
     createdAt: order.created_at,
     status: order.status,
     internal_comments: order.internal_comments,
@@ -186,6 +208,10 @@ export const getOrdersByIds = async (ids: string[]) => {
       neighborhood: order.shipping_neighborhood || '',
       price: Number(order.shipping_cost || 0),
     } : undefined,
+    delivery_method: order.delivery_method || undefined,
+    payment_method: order.payment_method || undefined,
+    payment_label: order.payment_label || undefined,
+    change_amount: order.change_amount !== null && order.change_amount !== undefined ? Number(order.change_amount) : null,
     createdAt: order.created_at,
     status: order.status,
     internal_comments: order.internal_comments,

@@ -37,6 +37,10 @@ export interface Order {
   items: CartItem[];
   total: number;
   shippingRate?: ShippingRate;
+  delivery_method?: DeliveryMethod;
+  payment_method?: PaymentMethodCode;
+  payment_label?: string;
+  change_amount?: number | null;
   customerInfo: CustomerInfo;
   createdAt: string;
   status: 'pending' | 'processing' | 'sent' | 'delivered' | 'cancelled';
@@ -53,6 +57,17 @@ export interface CustomerInfo {
   email: string;
   orderNotes?: string;
 }
+
+export type DeliveryMethod = 'delivery' | 'pickup';
+
+export type PaymentMethodCode =
+  | 'pix'
+  | 'card_delivery'
+  | 'cash_exact_delivery'
+  | 'cash_change_delivery'
+  | 'card_store'
+  | 'cash_exact_store'
+  | 'cash_change_store';
 
 export type ProductCategory =
   | 'gels-pomadas'

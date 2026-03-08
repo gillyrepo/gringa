@@ -6,7 +6,7 @@ import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { CustomerInfo, Order } from '@/types/product';
+import { CustomerInfo, DeliveryMethod, Order, PaymentMethodCode } from '@/types/product';
 import pixIcon from '@/assets/pixicon.png';
 import truckIcon from '@/assets/caminhao.png';
 import shopIcon from '@/assets/loja.png';
@@ -19,6 +19,13 @@ import { cn } from '@/lib/utils';
 
 const DEFAULT_WHATSAPP_NUMBER = '5535991154125';
 
+interface PaymentSubmission {
+    whatsappPaymentText: string;
+    paymentMethodCode: PaymentMethodCode;
+    paymentLabel: string;
+    changeAmount?: number | null;
+}
+
 const PaymentPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
@@ -30,7 +37,7 @@ const PaymentPage = () => {
     const [pixCode, setPixCode] = useState('');
 
     const customerData = location.state?.customerData as CustomerInfo;
-    const deliveryMethod = location.state?.deliveryMethod as 'delivery' | 'pickup';
+    const deliveryMethod = location.state?.deliveryMethod as DeliveryMethod;
 
     useEffect(() => {
         if (!customerData || items.length === 0) {
@@ -63,7 +70,7 @@ const PaymentPage = () => {
         setIsPaymentModalOpen(true);
     };
 
-    const generateWhatsAppMessage = (data: CustomerInfo, paymentMethod: string, changeInfo?: string) => {
+    const generateWhatsAppMessage = (data: CustomerInfo, paymentText: string, isPix: boolean) => {
         const itemsList = items
             .map((item) => {
                 const hasDiscount = !!(item.product.discount_percentage && item.product.discount_percentage > 0 && (!item.product.discount_expires_at || new Date(item.product.discount_expires_at) > new Date()));
@@ -77,13 +84,6 @@ const PaymentPage = () => {
             })
             .join('\n');
 
-        let paymentText = paymentMethod;
-        if (paymentMethod === 'PIX') {
-            paymentText += ' (Cliente enviará o comprovante)';
-        } else if (changeInfo) {
-            paymentText += ` (${changeInfo})`;
-        }
-
         return `Olá, segue meu pedido:
 
 *Nome do responsável:* ${data.responsibleName}
@@ -91,7 +91,7 @@ ${deliveryMethod === 'delivery' ? `*Endereço:* ${data.address} ${data.complemen
 *E-mail:* ${data.email}
 ${data.orderNotes ? `*Observações:* ${data.orderNotes}\n` : ''}
 *Forma de Pagamento:* ${paymentText}
-${paymentMethod === 'PIX' ? '\n_O pagamento foi feito via PIX, o cliente precisa enviar o comprovante de pagamento._\n' : ''}
+${isPix ? '\n_O pagamento foi feito via PIX, o cliente precisa enviar o comprovante de pagamento._\n' : ''}
 *Itens do pedido:*
 ${itemsList}
 
@@ -110,13 +110,19 @@ ${itemsList}
         const isDelivery = pendingPaymentMethod.includes('Entrega');
         const paymentLocation = isDelivery ? 'na entrega' : 'na loja';
         let whatsappPaymentText = '';
+        let paymentMethodCode: PaymentMethodCode = 'card_delivery';
+        let paymentLabel = '';
 
         switch (paymentType) {
             case 'card':
                 whatsappPaymentText = `Cliente vai pagar ${paymentLocation} com cartão`;
+                paymentMethodCode = isDelivery ? 'card_delivery' : 'card_store';
+                paymentLabel = isDelivery ? 'Pagar na Entrega - Cartão' : 'Pagar na Loja - Cartão';
                 break;
             case 'cash_exact':
                 whatsappPaymentText = `Cliente vai pagar ${paymentLocation} com dinheiro, não precisa de troco`;
+                paymentMethodCode = isDelivery ? 'cash_exact_delivery' : 'cash_exact_store';
+                paymentLabel = isDelivery ? 'Pagar na Entrega - Dinheiro (sem troco)' : 'Pagar na Loja - Dinheiro (sem troco)';
                 break;
             case 'cash_change':
                 if (changeAmount) {
@@ -124,19 +130,26 @@ ${itemsList}
                 } else {
                     whatsappPaymentText = `Cliente vai pagar ${paymentLocation} com dinheiro`;
                 }
+                paymentMethodCode = isDelivery ? 'cash_change_delivery' : 'cash_change_store';
+                paymentLabel = isDelivery ? 'Pagar na Entrega - Dinheiro (com troco)' : 'Pagar na Loja - Dinheiro (com troco)';
                 break;
         }
 
-        onSubmit(whatsappPaymentText);
+        onSubmit({
+            whatsappPaymentText,
+            paymentMethodCode,
+            paymentLabel,
+            changeAmount: paymentType === 'cash_change' ? (changeAmount ?? null) : null,
+        });
         setPendingPaymentMethod(null);
     };
 
-    const onSubmit = async (paymentMethod: string) => {
+    const onSubmit = async ({ whatsappPaymentText, paymentMethodCode, paymentLabel, changeAmount = null }: PaymentSubmission) => {
         if (!customerData) return;
         setIsSubmitting(true);
 
         try {
-            const message = generateWhatsAppMessage(customerData, paymentMethod);
+            const message = generateWhatsAppMessage(customerData, whatsappPaymentText, paymentMethodCode === 'pix');
 
             let createdOrder = null;
             try {
@@ -146,6 +159,10 @@ ${itemsList}
                     customerInfo: customerData,
                     whatsappMessage: message,
                     shippingRate: shippingRate || undefined,
+                    deliveryMethod,
+                    paymentMethod: paymentMethodCode,
+                    paymentLabel,
+                    changeAmount,
                 });
             } catch (dbError) {
                 console.error('Erro ao salvar pedido no banco:', dbError);
@@ -161,6 +178,10 @@ ${itemsList}
                 total,
                 customerInfo: customerData,
                 shippingRate: shippingRate || undefined,
+                delivery_method: deliveryMethod,
+                payment_method: paymentMethodCode,
+                payment_label: paymentLabel,
+                change_amount: changeAmount,
                 createdAt: new Date().toISOString(),
                 status: 'sent',
             };
@@ -306,7 +327,12 @@ ${itemsList}
                 total={total}
                 onConfirm={() => {
                     setIsPaymentModalOpen(false);
-                    onSubmit('PIX');
+                    onSubmit({
+                        whatsappPaymentText: 'PIX (Cliente enviará o comprovante)',
+                        paymentMethodCode: 'pix',
+                        paymentLabel: 'PIX',
+                        changeAmount: null,
+                    });
                 }}
                 isSubmitting={isSubmitting}
             />

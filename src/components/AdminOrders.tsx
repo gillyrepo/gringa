@@ -186,9 +186,9 @@ export const AdminOrders = ({ isMobile = false }: AdminOrdersProps) => {
                       <span className="text-sm">{new Date(order.createdAt).toLocaleDateString('pt-BR')}</span>
                     </div>
                     <div className="flex flex-col">
-                      <span className="text-[10px] uppercase text-muted-foreground font-bold">Email</span>
-                      <span className="text-xs truncate max-w-[120px]" title={order.customerInfo.email}>
-                        {order.customerInfo.email}
+                      <span className="text-[10px] uppercase text-muted-foreground font-bold">Celular</span>
+                      <span className="text-xs truncate max-w-[120px]" title={order.customerInfo.phone}>
+                        {order.customerInfo.phone}
                       </span>
                     </div>
                   </div>

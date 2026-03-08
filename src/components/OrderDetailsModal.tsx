@@ -42,6 +42,11 @@ export const OrderDetailsModal = ({
 
   if (!order) return null;
 
+  const resolvedDeliveryMethod = order.delivery_method || (order.shippingRate ? 'delivery' : 'pickup');
+  const deliveryLabel = resolvedDeliveryMethod === 'pickup' ? 'Retirada na loja' : 'Entrega';
+  const paymentLabel = order.payment_label || 'Não informado';
+  const shouldShowAddress = resolvedDeliveryMethod === 'delivery';
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
@@ -51,13 +56,40 @@ export const OrderDetailsModal = ({
           </DialogTitle>
         </DialogHeader>
         <div className="grid gap-4 py-4">
+          <div className="rounded-lg border bg-muted/40 p-3">
+            <h3 className="font-semibold mb-2">Informações principais</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+              <div className="rounded-md border bg-background p-2">
+                <span className="text-xs uppercase font-bold text-muted-foreground block">Forma de pagamento</span>
+                <span className="font-semibold">{paymentLabel}</span>
+                {typeof order.change_amount === 'number' && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Troco para: R$ {order.change_amount.toFixed(2)}
+                  </p>
+                )}
+              </div>
+              <div className="rounded-md border bg-background p-2">
+                <span className="text-xs uppercase font-bold text-muted-foreground block">Forma de entrega</span>
+                <span className="font-semibold">{deliveryLabel}</span>
+                {shouldShowAddress && (
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {order.customerInfo.address}
+                    {order.customerInfo.complement ? ` - ${order.customerInfo.complement}` : ''}
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h3 className="font-semibold mb-2">Cliente</h3>
-              <p className="text-sm"><span className="font-medium">Nome do responsável por receber o pedido:</span> {order.customerInfo.responsibleName}</p>
+              <p className="text-sm"><span className="font-medium">Responsável:</span> {order.customerInfo.responsibleName}</p>
               <p className="text-sm"><span className="font-medium">Email:</span> {order.customerInfo.email}</p>
               <p className="text-sm"><span className="font-medium">Telefone:</span> {order.customerInfo.phone}</p>
-              <p className="text-sm"><span className="font-medium">Endereço:</span> {order.customerInfo.address} {order.customerInfo.complement ? `- ${order.customerInfo.complement}` : ''}</p>
+              {shouldShowAddress && (
+                <p className="text-sm"><span className="font-medium">Endereço:</span> {order.customerInfo.address} {order.customerInfo.complement ? `- ${order.customerInfo.complement}` : ''}</p>
+              )}
               {order.customerInfo.orderNotes && (
                 <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-yellow-800 text-sm">
                    <span className="font-medium block mb-1">Observações do Cliente:</span>
