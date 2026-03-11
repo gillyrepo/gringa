@@ -10,14 +10,12 @@ import { CustomerInfo, DeliveryMethod, Order, PaymentMethodCode } from '@/types/
 import pixIcon from '@/assets/pixicon.png';
 import truckIcon from '@/assets/caminhao.png';
 import shopIcon from '@/assets/loja.png';
-import { supabase } from '@/lib/supabase';
 import { createOrder } from '@/services/orderService';
 import { PaymentModal } from '@/components/PaymentModal';
 import { ChangeModal } from '@/components/ChangeModal';
+import { OrderSummaryModal } from '@/components/OrderSummaryModal';
 import { gerarPix } from '@/services/pixService';
 import { cn } from '@/lib/utils';
-
-const DEFAULT_WHATSAPP_NUMBER = '5535991154125';
 
 interface PaymentSubmission {
     whatsappPaymentText: string;
@@ -35,6 +33,8 @@ const PaymentPage = () => {
     const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
     const [pendingPaymentMethod, setPendingPaymentMethod] = useState<string | null>(null);
     const [pixCode, setPixCode] = useState('');
+    const [pendingSubmission, setPendingSubmission] = useState<PaymentSubmission | null>(null);
+    const [isOrderSummaryOpen, setIsOrderSummaryOpen] = useState(false);
 
     const customerData = location.state?.customerData as CustomerInfo;
     const deliveryMethod = location.state?.deliveryMethod as DeliveryMethod;
@@ -135,13 +135,15 @@ ${itemsList}
                 break;
         }
 
-        onSubmit({
+        setPendingSubmission({
             whatsappPaymentText,
             paymentMethodCode,
             paymentLabel,
             changeAmount: paymentType === 'cash_change' ? (changeAmount ?? null) : null,
         });
         setPendingPaymentMethod(null);
+        setIsChangeModalOpen(false);
+        setIsOrderSummaryOpen(true);
     };
 
     const onSubmit = async ({ whatsappPaymentText, paymentMethodCode, paymentLabel, changeAmount = null }: PaymentSubmission) => {
@@ -186,21 +188,8 @@ ${itemsList}
                 status: 'sent',
             };
             addOrder(order);
-
-            const { data: storeSettings } = await supabase
-                .from('store_settings')
-                .select('whatsapp_number')
-                .eq('store', 'docimdagringa')
-                .single();
-
-            const whatsappNumber = storeSettings?.whatsapp_number || DEFAULT_WHATSAPP_NUMBER;
-            const encodedMessage = encodeURIComponent(message);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodedMessage}`;
-
-            clearCart();
-            window.open(whatsappUrl, '_blank');
             toast.success('Pedido enviado com sucesso!');
-            navigate('/pedidos');
+            // clearCart é feito ao clicar em "Ver meus pedidos" no modal, para não desmontar a página antes da tela de sucesso
         } catch (error) {
             toast.error('Erro ao enviar pedido. Tente novamente.');
         } finally {
@@ -327,14 +316,15 @@ ${itemsList}
                 total={total}
                 onConfirm={() => {
                     setIsPaymentModalOpen(false);
-                    onSubmit({
+                    setPendingSubmission({
                         whatsappPaymentText: 'PIX (Cliente enviará o comprovante)',
                         paymentMethodCode: 'pix',
                         paymentLabel: 'PIX',
                         changeAmount: null,
                     });
+                    setIsOrderSummaryOpen(true);
                 }}
-                isSubmitting={isSubmitting}
+                isSubmitting={false}
             />
 
             <ChangeModal
@@ -346,6 +336,33 @@ ${itemsList}
                 onConfirm={handleConfirmChange}
                 isStorePickup={pendingPaymentMethod === 'Loja'}
             />
+
+            {pendingSubmission && (
+                <OrderSummaryModal
+                    isOpen={isOrderSummaryOpen}
+                    onClose={() => {
+                        setIsOrderSummaryOpen(false);
+                        setPendingSubmission(null);
+                    }}
+                    customerData={customerData}
+                    items={items}
+                    total={total}
+                    itemsSubtotal={itemsSubtotal}
+                    deliveryMethod={deliveryMethod}
+                    shippingRate={shippingRate ?? null}
+                    paymentLabel={pendingSubmission.paymentLabel}
+                    changeAmount={pendingSubmission.changeAmount ?? null}
+                    onConfirm={async () => {
+                        await onSubmit(pendingSubmission);
+                    }}
+                    onViewOrders={() => {
+                        clearCart();
+                        setIsOrderSummaryOpen(false);
+                        setPendingSubmission(null);
+                        navigate('/pedidos');
+                    }}
+                />
+            )}
 
             <BottomNav />
         </div>
