@@ -90,7 +90,7 @@ export const ShippingRatesManager = ({ isOpen, onClose }: ShippingRatesManagerPr
     setFormData({
       city: 'Extrema',
       state: 'MG',
-      store_name: 'Gringa',
+      store: 'Gringa',
       price: 0,
       neighborhood: ''
     });

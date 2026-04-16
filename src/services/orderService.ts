@@ -144,7 +144,7 @@ export const getOrders = async () => {
     },
     shippingRate: order.shipping_city ? {
       id: 'stored-rate',
-      store_name: '',
+      store: '',
       state: 'SP',
       city: order.shipping_city,
       neighborhood: order.shipping_neighborhood || '',
@@ -202,7 +202,7 @@ export const getOrdersByIds = async (ids: string[]) => {
     },
     shippingRate: order.shipping_city ? {
       id: 'stored-rate',
-      store_name: '',
+      store: '',
       state: 'SP',
       city: order.shipping_city,
       neighborhood: order.shipping_neighborhood || '',

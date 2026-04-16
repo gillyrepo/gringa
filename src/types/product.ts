@@ -19,7 +19,7 @@ export interface Product {
 
 export interface ShippingRate {
   id: string;
-  store_name: string;
+  store: string;
   state: string;
   city: string;
   neighborhood: string;

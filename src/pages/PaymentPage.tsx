@@ -54,7 +54,7 @@ const PaymentPage = () => {
     }, 0);
 
     const handlePayment = () => {
-        const chavePix = '63813434000120';
+        const chavePix = '65649727000140';
         const nome = 'GRINGA STORE';
         const cidade = 'SAO PAULO';
 
