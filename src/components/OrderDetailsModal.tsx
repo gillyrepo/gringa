@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Save } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface OrderDetailsModalProps {
   order: Order | null;
@@ -46,6 +47,15 @@ export const OrderDetailsModal = ({
   const deliveryLabel = resolvedDeliveryMethod === 'pickup' ? 'Retirada na loja' : 'Entrega';
   const paymentLabel = order.payment_label || 'Não informado';
   const shouldShowAddress = resolvedDeliveryMethod === 'delivery';
+
+  const productsDiscount = order.items.reduce((acc, item) => {
+    const hasDiscount = !!(item.product.discount_percentage && item.product.discount_percentage > 0 && (!item.product.discount_expires_at || new Date(item.product.discount_expires_at) > new Date()));
+    const discountAmount = hasDiscount ? (item.product.price * (item.product.discount_percentage! / 100)) * item.quantity : 0;
+    return acc + discountAmount;
+  }, 0);
+
+  const itemsSubtotal = order.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0) - productsDiscount;
+  const couponDiscount = order.total_discount ? Math.max(0, order.total_discount - productsDiscount) : 0;
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -104,11 +114,17 @@ export const OrderDetailsModal = ({
               <div className="space-y-1 text-sm border-t pt-2">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>R$ {order.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0).toFixed(2)}</span>
+                  <span>R$ {itemsSubtotal.toFixed(2)}</span>
                 </div>
+                {order.coupon_code && couponDiscount > 0 ? (
+                  <div className="flex justify-between text-green-600 font-medium">
+                    <span>Desconto (Cupom: {order.coupon_code}):</span>
+                    <span>- R$ {couponDiscount.toFixed(2)}</span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between">
                   <span>Frete {order.shippingRate ? `(${order.shippingRate.city} - ${order.shippingRate.neighborhood})` : ''}:</span>
-                  <span>R$ {(order.shippingRate?.price ?? (order.total - order.items.reduce((acc, item) => acc + item.product.price * item.quantity, 0))).toFixed(2)}</span>
+                  <span>R$ {(order.shippingRate?.price ?? (order.total - itemsSubtotal + couponDiscount)).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between font-bold pt-1 border-t mt-1">
                   <span>Total:</span>
@@ -121,12 +137,32 @@ export const OrderDetailsModal = ({
           <div>
             <h3 className="font-semibold mb-2">Itens</h3>
             <div className="border rounded-md p-2 max-h-40 overflow-y-auto">
-              {order.items.map((item, idx) => (
-                <div key={idx} className="flex justify-between text-sm py-1 border-b last:border-0">
-                  <span>{item.quantity}x {item.product.name}</span>
-                  <span>R$ {(item.product.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
+              {order.items.map((item, idx) => {
+                const hasDiscount = !!(item.product.discount_percentage && item.product.discount_percentage > 0 && (!item.product.discount_expires_at || new Date(item.product.discount_expires_at) > new Date()));
+                const price = hasDiscount ? item.product.price * (1 - (item.product.discount_percentage! / 100)) : item.product.price;
+                return (
+                  <div key={idx} className="flex justify-between text-sm py-1 border-b last:border-0">
+                    <div className="flex flex-col">
+                      <span>{item.quantity}x {item.product.name}</span>
+                      {hasDiscount && (
+                        <span className="text-[10px] text-green-600 font-medium">
+                          Desconto de {item.product.discount_percentage}% aplicado
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex flex-col items-end">
+                      {hasDiscount && (
+                        <span className="text-xs text-muted-foreground line-through">
+                          R$ {(item.product.price * item.quantity).toFixed(2)}
+                        </span>
+                      )}
+                      <span className={cn("text-foreground", hasDiscount && "text-green-600 font-medium")}>
+                        R$ {(price * item.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 

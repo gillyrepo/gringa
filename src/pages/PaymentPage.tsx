@@ -27,7 +27,7 @@ interface PaymentSubmission {
 const PaymentPage = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { items, getTotal, clearCart, addOrder, shippingRate } = useCart();
+    const { items, getTotal, clearCart, addOrder, shippingRate, appliedCoupon, getDiscountAmount } = useCart();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
     const [isChangeModalOpen, setIsChangeModalOpen] = useState(false);
@@ -165,6 +165,8 @@ ${itemsList}
                     paymentMethod: paymentMethodCode,
                     paymentLabel,
                     changeAmount,
+                    couponCode: appliedCoupon?.code,
+                    couponDiscount: getDiscountAmount(),
                 });
             } catch (dbError) {
                 console.error('Erro ao salvar pedido no banco:', dbError);
@@ -184,6 +186,8 @@ ${itemsList}
                 payment_method: paymentMethodCode,
                 payment_label: paymentLabel,
                 change_amount: changeAmount,
+                coupon_code: appliedCoupon?.code,
+                total_discount: getDiscountAmount() + items.reduce((acc, item) => acc + (item.product.discount_percentage ? item.product.price * (item.product.discount_percentage / 100) * item.quantity : 0), 0),
                 createdAt: new Date().toISOString(),
                 status: 'sent',
             };
@@ -254,6 +258,12 @@ ${itemsList}
                                 <span className="text-muted-foreground">Subtotal</span>
                                 <span className="text-foreground">R$ {itemsSubtotal.toFixed(2)}</span>
                             </div>
+                            {appliedCoupon && getDiscountAmount() > 0 && (
+                                <div className="flex justify-between text-sm text-green-600 font-medium">
+                                    <span>Desconto do Cupom ({appliedCoupon.code})</span>
+                                    <span>- R$ {getDiscountAmount().toFixed(2)}</span>
+                                </div>
+                            )}
                             <div className="flex justify-between text-sm">
                                 <span className="text-muted-foreground">Frete ({deliveryMethod === 'pickup' ? 'Retirada na Loja' : (shippingRate?.neighborhood || 'N/A')})</span>
                                 <span className="text-foreground">R$ {(deliveryMethod === 'pickup' ? 0 : (shippingRate?.price || 0)).toFixed(2)}</span>
@@ -352,6 +362,8 @@ ${itemsList}
                     shippingRate={shippingRate ?? null}
                     paymentLabel={pendingSubmission.paymentLabel}
                     changeAmount={pendingSubmission.changeAmount ?? null}
+                    couponCode={appliedCoupon?.code}
+                    couponDiscount={getDiscountAmount()}
                     onConfirm={async () => {
                         await onSubmit(pendingSubmission);
                     }}

@@ -21,6 +21,8 @@ export interface OrderSummaryModalProps {
   shippingRate: ShippingRate | null;
   paymentLabel: string;
   changeAmount?: number | null;
+  couponCode?: string;
+  couponDiscount?: number;
   onConfirm: () => Promise<void>;
   /** Chamado ao clicar em "Ver meus pedidos" — deve limpar carrinho, fechar modal e navegar */
   onViewOrders: () => void;
@@ -37,6 +39,8 @@ export const OrderSummaryModal = ({
   shippingRate,
   paymentLabel,
   changeAmount,
+  couponCode,
+  couponDiscount,
   onConfirm,
   onViewOrders,
 }: OrderSummaryModalProps) => {
@@ -139,6 +143,12 @@ export const OrderSummaryModal = ({
                   <span>Subtotal</span>
                   <span>R$ {itemsSubtotal.toFixed(2)}</span>
                 </div>
+                {couponCode && couponDiscount && couponDiscount > 0 ? (
+                  <div className="flex justify-between text-green-600 font-medium">
+                    <span>Desconto do Cupom ({couponCode})</span>
+                    <span>- R$ {couponDiscount.toFixed(2)}</span>
+                  </div>
+                ) : null}
                 <div className="flex justify-between text-muted-foreground">
                   <span>Frete ({shippingLabel})</span>
                   <span>R$ {shippingPrice.toFixed(2)}</span>

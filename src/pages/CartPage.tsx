@@ -6,6 +6,7 @@ import { CartItem } from '@/components/CartItem';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
+import { CouponInput } from '@/components/CouponInput';
 import truckIcon from '@/assets/caminhao.png';
 import shopIcon from '@/assets/loja.png';
 import {
@@ -25,7 +26,7 @@ import { supabase } from '@/lib/supabase';
 
 const CartPage = () => {
   const navigate = useNavigate();
-  const { items, getTotal, clearCart, shippingRate, setShippingRate } = useCart();
+  const { items, getTotal, clearCart, shippingRate, setShippingRate, appliedCoupon, getDiscountAmount } = useCart();
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
   const [isShippingModalOpen, setIsShippingModalOpen] = useState(false);
   const [deliveryMethod, setDeliveryMethod] = useState<'delivery' | 'pickup' | null>(null);
@@ -127,12 +128,14 @@ const CartPage = () => {
                 </span>
               </div>
               <div className="space-y-4">
-                <div className="flex justify-between text-sm items-center">
-                  <span className="text-muted-foreground">Cupom de Desconto</span>
-                  <span className="px-3 py-1.5 rounded-full border border-primary/30 bg-primary/5 text-primary text-sm font-medium">
-                    Em Breve ...
-                  </span>
-                </div>
+                <CouponInput />
+                {appliedCoupon && (
+                  <div className="flex justify-between text-sm text-green-600 font-medium items-center">
+                    <span>Desconto do Cupom</span>
+                    <span>- R$ {getDiscountAmount().toFixed(2)}</span>
+                  </div>
+                )}
+                
                 <div className="space-y-2">
                   <span className="text-sm text-muted-foreground block">Selecione o tipo de entrega:</span>
                   <div className="flex justify-between text-sm items-center gap-2">

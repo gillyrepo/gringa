@@ -7,6 +7,7 @@ import { z } from 'zod';
 import { useCart } from '@/contexts/CartContext';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
+import { CouponInput } from '@/components/CouponInput';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -35,7 +36,7 @@ const baseSchema = z.object({
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { items, getTotal, customerInfo, setCustomerInfo, shippingRate } = useCart();
+  const { items, getTotal, customerInfo, setCustomerInfo, shippingRate, appliedCoupon, getDiscountAmount } = useCart();
   const [storeAddress, setStoreAddress] = useState<string | null>(null);
   const [storeObservation, setStoreObservation] = useState<string | null>(null);
 
@@ -173,10 +174,19 @@ const CheckoutPage = () => {
                 <span className="text-muted-foreground">Frete ({deliveryMethod === 'pickup' ? 'Retirada na Loja' : (shippingRate?.neighborhood || 'N/A')})</span>
                 <span className="text-foreground">R$ {(deliveryMethod === 'pickup' ? 0 : (shippingRate?.price || 0)).toFixed(2)}</span>
               </div>
+              {appliedCoupon && (
+                <div className="flex justify-between text-sm text-green-600 font-medium pt-1">
+                  <span>Desconto do Cupom ({appliedCoupon.code})</span>
+                  <span>- R$ {getDiscountAmount().toFixed(2)}</span>
+                </div>
+              )}
               <div className="flex justify-between font-bold pt-2 border-t border-border">
                 <span>Total</span>
                 <span className="text-primary">R$ {total.toFixed(2)}</span>
               </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-border">
+              <CouponInput />
             </div>
           </div>
         </div>

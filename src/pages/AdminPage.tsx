@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { Lock, Package, Settings, ShoppingBag, Eye, EyeOff, Truck, ChevronRight } from 'lucide-react';
+import { Lock, Package, Settings, ShoppingBag, Eye, EyeOff, Truck, ChevronRight, Ticket } from 'lucide-react';
 import { Header } from '@/components/Header';
 import { BottomNav } from '@/components/BottomNav';
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ import { AdminOrders } from '@/components/AdminOrders';
 import { AdminProducts } from '@/components/AdminProducts';
 import { ShippingRatesManager } from '@/components/ShippingRatesManager';
 import { AdminSettings } from '@/components/AdminSettings';
+import { AdminCoupons } from '@/components/admin/AdminCoupons';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 const AdminPage = () => {
@@ -22,10 +23,10 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(false);
 
   // Desktop Tab State
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'shipping' | 'settings'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'shipping' | 'coupons' | 'settings'>('orders');
 
   // Mobile Modal State
-  const [activeMobileSection, setActiveMobileSection] = useState<'orders' | 'products' | 'shipping' | 'settings' | null>(null);
+  const [activeMobileSection, setActiveMobileSection] = useState<'orders' | 'products' | 'shipping' | 'coupons' | 'settings' | null>(null);
 
   useEffect(() => {
     // Check initial session
@@ -140,6 +141,8 @@ const AdminPage = () => {
         return <AdminProducts isMobile={true} />;
       case 'shipping':
         return <ShippingRatesManager isOpen={true} onClose={() => { }} />;
+      case 'coupons':
+        return <AdminCoupons isMobile={true} />;
       case 'settings':
         return <AdminSettings />;
       default:
@@ -152,6 +155,7 @@ const AdminPage = () => {
       case 'orders': return 'Pedidos';
       case 'products': return 'Produtos';
       case 'shipping': return 'Ajuste de Frete';
+      case 'coupons': return 'Cupons';
       case 'settings': return 'Configurações';
       default: return '';
     }
@@ -198,6 +202,12 @@ const AdminPage = () => {
               Ajuste de Frete
             </Button>
             <Button
+              variant={activeTab === 'coupons' ? 'default' : 'outline'}
+              onClick={() => setActiveTab('coupons')}
+            >
+              Cupons
+            </Button>
+            <Button
               variant={activeTab === 'settings' ? 'default' : 'outline'}
               onClick={() => setActiveTab('settings')}
             >
@@ -210,6 +220,7 @@ const AdminPage = () => {
           {activeTab === 'shipping' && (
             <ShippingRatesManager isOpen={true} onClose={() => { }} />
           )}
+          {activeTab === 'coupons' && <AdminCoupons />}
           {activeTab === 'settings' && <AdminSettings />}
         </div>
 
@@ -258,6 +269,22 @@ const AdminPage = () => {
               <div>
                 <h3 className="font-semibold">Ajuste de Frete</h3>
                 <p className="text-xs text-muted-foreground">Taxas e locais de entrega</p>
+              </div>
+            </div>
+            <ChevronRight className="h-5 w-5 text-muted-foreground" />
+          </Card>
+
+          <Card
+            className="p-4 flex items-center justify-between cursor-pointer hover:bg-accent/50 active:bg-accent transition-colors"
+            onClick={() => setActiveMobileSection('coupons')}
+          >
+            <div className="flex items-center gap-3">
+              <div className="bg-primary/10 p-2 rounded-full">
+                <Ticket className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <h3 className="font-semibold">Cupons</h3>
+                <p className="text-xs text-muted-foreground">Gerenciar descontos</p>
               </div>
             </div>
             <ChevronRight className="h-5 w-5 text-muted-foreground" />

@@ -1,3 +1,14 @@
+export interface Coupon {
+  id: string;
+  code: string;
+  discount_percentage: number;
+  discount_type: 'total_with_shipping' | 'total_without_shipping' | 'specific_product';
+  product_id?: string | null;
+  usage_limit: number;
+  usage_count: number;
+  active: boolean;
+  store?: string;
+}
 
 export interface Product {
   id: string;
@@ -47,6 +58,7 @@ export interface Order {
   internal_comments?: string;
   external_comments?: string;
   total_discount?: number;
+  coupon_code?: string;
 }
 
 export interface CustomerInfo {

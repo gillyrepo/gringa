@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import { Product, CartItem, CustomerInfo, Order, ShippingRate } from '@/types/product';
+import { Product, CartItem, CustomerInfo, Order, ShippingRate, Coupon } from '@/types/product';
 
 interface CartContextType {
   items: CartItem[];
@@ -19,6 +19,9 @@ interface CartContextType {
   repeatLastOrder: (currentProducts: Product[]) => Promise<boolean>;
   shippingRate: ShippingRate | null;
   setShippingRate: (rate: ShippingRate | null) => void;
+  appliedCoupon: Coupon | null;
+  setAppliedCoupon: (coupon: Coupon | null) => void;
+  getDiscountAmount: () => number;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -48,6 +51,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     const stored = localStorage.getItem(SHIPPING_STORAGE_KEY);
     return stored ? JSON.parse(stored) : null;
   });
+
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
 
   useEffect(() => {
     localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(items));
@@ -104,15 +109,46 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const clearCart = () => {
     setItems([]);
     setShippingRate(null);
+    setAppliedCoupon(null);
   };
 
-  const getTotal = () => {
-    const itemsTotal = items.reduce((total, item) => {
+  const getDiscountAmount = () => {
+    if (!appliedCoupon) return 0;
+    
+    const subtotal = items.reduce((total, item) => {
       const hasDiscount = !!(item.product.discount_percentage && item.product.discount_percentage > 0 && (!item.product.discount_expires_at || new Date(item.product.discount_expires_at) > new Date()));
       const price = hasDiscount ? item.product.price * (1 - (item.product.discount_percentage! / 100)) : item.product.price;
       return total + price * item.quantity;
     }, 0);
-    return itemsTotal + (shippingRate?.price || 0);
+
+    const shipping = shippingRate?.price || 0;
+    let discount = 0;
+
+    if (appliedCoupon.discount_type === 'total_with_shipping') {
+      discount = (subtotal + shipping) * (appliedCoupon.discount_percentage / 100);
+    } else if (appliedCoupon.discount_type === 'total_without_shipping') {
+      discount = subtotal * (appliedCoupon.discount_percentage / 100);
+    } else if (appliedCoupon.discount_type === 'specific_product' && appliedCoupon.product_id) {
+      const item = items.find(i => i.product.id === appliedCoupon.product_id);
+      if (item) {
+        const hasDiscount = !!(item.product.discount_percentage && item.product.discount_percentage > 0 && (!item.product.discount_expires_at || new Date(item.product.discount_expires_at) > new Date()));
+        const price = hasDiscount ? item.product.price * (1 - (item.product.discount_percentage! / 100)) : item.product.price;
+        const productSubtotal = price * item.quantity;
+        discount = productSubtotal * (appliedCoupon.discount_percentage / 100);
+      }
+    }
+    return discount;
+  };
+
+  const getTotal = () => {
+    const subtotal = items.reduce((total, item) => {
+      const hasDiscount = !!(item.product.discount_percentage && item.product.discount_percentage > 0 && (!item.product.discount_expires_at || new Date(item.product.discount_expires_at) > new Date()));
+      const price = hasDiscount ? item.product.price * (1 - (item.product.discount_percentage! / 100)) : item.product.price;
+      return total + price * item.quantity;
+    }, 0);
+    const shipping = shippingRate?.price || 0;
+    const total = subtotal + shipping - getDiscountAmount();
+    return Math.max(0, total);
   };
 
   const getItemCount = () => {
@@ -189,6 +225,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
         repeatLastOrder,
         shippingRate,
         setShippingRate,
+        appliedCoupon,
+        setAppliedCoupon,
+        getDiscountAmount,
       }}
     >
       {children}

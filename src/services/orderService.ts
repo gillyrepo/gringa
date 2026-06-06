@@ -12,6 +12,8 @@ export interface CreateOrderParams {
   paymentMethod?: PaymentMethodCode;
   paymentLabel?: string;
   changeAmount?: number | null;
+  couponCode?: string;
+  couponDiscount?: number;
 }
 
 export const createOrder = async ({
@@ -24,6 +26,8 @@ export const createOrder = async ({
   paymentMethod,
   paymentLabel,
   changeAmount,
+  couponCode,
+  couponDiscount,
 }: CreateOrderParams) => {
   try {
     // 1. Insert Order Header
@@ -37,7 +41,7 @@ export const createOrder = async ({
         customer_email: customerInfo.email,
         order_notes: customerInfo.orderNotes || null,
         total_amount: total,
-        total_discount: items.reduce((acc, item) => {
+        total_discount: (couponDiscount || 0) + items.reduce((acc, item) => {
           // Calculate discount per item if applicable
           const discount = item.product.discount_percentage && item.product.discount_percentage > 0 && (!item.product.discount_expires_at || new Date(item.product.discount_expires_at) > new Date())
             ? (item.product.price * (item.product.discount_percentage / 100)) * item.quantity
@@ -53,6 +57,7 @@ export const createOrder = async ({
         payment_method: paymentMethod || null,
         payment_label: paymentLabel || null,
         change_amount: typeof changeAmount === 'number' ? changeAmount : null,
+        coupon_code: couponCode || null,
       })
       .select()
       .single();
@@ -100,6 +105,16 @@ export const createOrder = async ({
         code: itemsError.code
       });
       throw itemsError;
+    }
+
+    // 3. Increment coupon usage if a coupon was used
+    if (couponCode) {
+      const { error: couponError } = await supabase.rpc('increment_coupon_usage', {
+        coupon_code: couponCode
+      });
+      if (couponError) {
+        console.error('Erro ao incrementar uso do cupom:', couponError);
+      }
     }
 
     return orderData;
@@ -158,6 +173,8 @@ export const getOrders = async () => {
     status: order.status,
     internal_comments: order.internal_comments,
     external_comments: order.external_comments,
+    total_discount: order.total_discount,
+    coupon_code: order.coupon_code,
   })) as Order[];
 };
 
@@ -216,6 +233,8 @@ export const getOrdersByIds = async (ids: string[]) => {
     status: order.status,
     internal_comments: order.internal_comments,
     external_comments: order.external_comments,
+    total_discount: order.total_discount,
+    coupon_code: order.coupon_code,
   })) as Order[];
 };
 
