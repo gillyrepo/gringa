@@ -23,10 +23,26 @@ const AdminPage = () => {
   const [loading, setLoading] = useState(false);
 
   // Desktop Tab State
-  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'shipping' | 'coupons' | 'settings'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'products' | 'shipping' | 'coupons' | 'settings'>(() => {
+    return (localStorage.getItem('admin_active_tab') as any) || 'orders';
+  });
 
   // Mobile Modal State
-  const [activeMobileSection, setActiveMobileSection] = useState<'orders' | 'products' | 'shipping' | 'coupons' | 'settings' | null>(null);
+  const [activeMobileSection, setActiveMobileSection] = useState<'orders' | 'products' | 'shipping' | 'coupons' | 'settings' | null>(() => {
+    return (localStorage.getItem('admin_active_mobile_section') as any) || null;
+  });
+
+  useEffect(() => {
+    localStorage.setItem('admin_active_tab', activeTab);
+  }, [activeTab]);
+
+  useEffect(() => {
+    if (activeMobileSection) {
+      localStorage.setItem('admin_active_mobile_section', activeMobileSection);
+    } else {
+      localStorage.removeItem('admin_active_mobile_section');
+    }
+  }, [activeMobileSection]);
 
   useEffect(() => {
     // Check initial session
