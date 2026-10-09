@@ -35,11 +35,21 @@ const Index = () => {
     }));
   }, [products]);
 
-  const filteredProducts = products.filter((product) => {
-    const matchesCategory = !selectedCategory || product.category === selectedCategory;
-    const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredProducts = useMemo(() => {
+    return products
+      .filter((product) => {
+        const matchesCategory = !selectedCategory || product.category === selectedCategory;
+        const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase());
+        return matchesCategory && matchesSearch;
+      })
+      .sort((a, b) => {
+        const aOutOfStock = !a.active || a.stock <= 0;
+        const bOutOfStock = !b.active || b.stock <= 0;
+
+        if (aOutOfStock === bOutOfStock) return 0;
+        return aOutOfStock ? 1 : -1;
+      });
+  }, [products, selectedCategory, searchQuery]);
 
   const handleRepeatOrder = async () => {
     const success = await repeatLastOrder(products);

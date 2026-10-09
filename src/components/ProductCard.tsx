@@ -32,6 +32,8 @@ export function ProductCard({ product }: ProductCardProps) {
   const hasDiscount = !!(product.discount_percentage && product.discount_percentage > 0 && (!product.discount_expires_at || new Date(product.discount_expires_at) > new Date()));
   const discountedPrice = hasDiscount ? product.price * (1 - (product.discount_percentage! / 100)) : product.price;
 
+  const isOutOfStock = !product.active || product.stock <= 0;
+
   const handleNextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
@@ -41,7 +43,7 @@ export function ProductCard({ product }: ProductCardProps) {
   };
 
   const handleAdd = () => {
-    if (!product.active) {
+    if (isOutOfStock) {
       toast.error('Produto fora de estoque');
       return;
     }
@@ -71,7 +73,7 @@ export function ProductCard({ product }: ProductCardProps) {
       <Card className={cn(
         'group overflow-hidden transition-all duration-300 h-full flex flex-col',
         'hover:shadow-gold hover:border-primary/30',
-        !product.active && 'opacity-60'
+        isOutOfStock && 'opacity-60'
       )}>
         <div
           className="relative aspect-square overflow-hidden bg-muted cursor-pointer"
@@ -82,7 +84,7 @@ export function ProductCard({ product }: ProductCardProps) {
             alt={product.name}
             className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
           />
-          {!product.active && (
+          {isOutOfStock && (
             <div className="absolute inset-0 bg-background/80 flex items-center justify-center">
               <span className="text-sm font-semibold text-destructive">
                 Fora de Estoque
@@ -161,7 +163,7 @@ export function ProductCard({ product }: ProductCardProps) {
               <Button
                 className="inline-flex items-center justify-center whitespace-nowrap text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0 bg-primary hover:bg-primary/90 rounded-md h-8 px-3 gap-1 gradient-gold text-primary-foreground shadow-gold flex-shrink-0"
                 onClick={handleAdd}
-                disabled={!product.active}
+                disabled={isOutOfStock}
               >
                 <ShoppingCart className="h-3 w-3" />
                 <span className="text-xs hidden xs:inline">Adicionar</span>
